@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 """A very simple CNN classifier, modified to display data in TensorBoard."""
 ## Author: Sun Dongdong
 from __future__ import absolute_import
@@ -9,6 +10,8 @@ import numpy
 np = numpy
 import random
 from sklearn.metrics import roc_curve, auc
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -108,8 +111,8 @@ def create_variables():
 
         y = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
         #y = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
-    _ = tf.histogram_summary('weights', W_fc2)
-    _ = tf.histogram_summary('biases', b_fc2)
+    summary_weights = tf.histogram_summary('weights', W_fc2)
+    summary_biases = tf.histogram_summary('biases', b_fc2)
    
     # Define loss and optimizer
     y_ = tf.placeholder(tf.float32, [None, 2], name='y-input')
@@ -117,7 +120,7 @@ def create_variables():
     with tf.name_scope('xent'):
         #loss = tf.reduce_sum(tf.abs(y_-y))
         cross_entropy = -tf.reduce_sum(y_ * tf.log(y))
-        _ = tf.scalar_summary('cross entropy', cross_entropy)
+        summary_crossentropy = tf.scalar_summary('cross entropy', cross_entropy)
     with tf.name_scope('train'):
         train_step = tf.train.AdamOptimizer(
         FLAGS.learning_rate).minimize(cross_entropy)
@@ -128,10 +131,11 @@ def create_variables():
          
         correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-        _ = tf.scalar_summary('accuracy', accuracy)
+        summary_accuracy = tf.scalar_summary('accuracy', accuracy)
 
     # Merge all the summaries and write them out to /tmp/mnist_logs
-    merged = tf.merge_all_summaries()
+    merged = tf.merge_summary([summary_weights, summary_biases,
+                               summary_crossentropy, summary_accuracy])
     return x_input, y_, keep_prob, train_step, merged, accuracy, y
 
 def main(_):
